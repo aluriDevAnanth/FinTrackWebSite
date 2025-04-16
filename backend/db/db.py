@@ -10,7 +10,7 @@ host, user, password, database, port = (
     os.getenv("USER"),
     os.getenv("PASSWORD"),
     os.getenv("DATABASE"),
-    os.getenv("PORT"),
+    os.getenv("DB_PORT"),
 )
 
 

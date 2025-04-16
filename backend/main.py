@@ -17,11 +17,13 @@ load_dotenv()
 
 app = FastAPI()
 
-print([os_getenv("FRONTEND_URL")])
+FRONTEND_URL= os_getenv("FRONTEND_URL")
+
+print(FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +44,6 @@ app.include_router(savings_goals_router)
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/cors-check")
+@app.get("/cors_check")
 def cors_check():
     return {"origin": os_getenv("FRONTEND_URL")}

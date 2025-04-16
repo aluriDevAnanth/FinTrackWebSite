@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Request, status, Query
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from pydantic import ValidationError
 from mysql.connector import Error as MYSQLError
 from schemas import (
-    Expense,
-    CreateExpense,
-    UpdateExpense,
+    SavingsGoal,
+    CreateSavingsGoal,
+    UpdateSavingsGoal,
     User,
     BaseSuccessResponse,
     BaseErrorResponse,
@@ -15,37 +14,39 @@ from db.db import create_connection
 from utils.logger import logger
 from json import loads as json_loads
 
-router = APIRouter(prefix="/expense")
+router = APIRouter(prefix="/savings_goals")
 conn = create_connection()
 
 
-class ExpenseSuccessResponse(BaseSuccessResponse):
-    results: Expense
+class SavingsGoalSuccessResponse(BaseSuccessResponse):
+    results: SavingsGoal
 
 
-class ExpensesSuccessResponse(BaseSuccessResponse):
-    results: list[Expense]
+class SavingsGoalsSuccessResponse(BaseSuccessResponse):
+    results: list[SavingsGoal]
 
 
 column_names = [
-    "expense_id",
+    "goal_id",
     "user_id",
-    "amount",
-    "description",
-    "expense_date",
+    "name",
+    "target_amount",
+    "current_amount",
+    "target_date",
     "created_at",
+    "updated_at",
 ]
 
 
 @router.get(
-    "/get_expense/{expense_id}",
+    "/get_goal/{goal_id}",
     responses={
-        200: {"model": ExpenseSuccessResponse},
+        200: {"model": SavingsGoalSuccessResponse},
         404: {"model": BaseErrorResponse},
         500: {"model": BaseErrorResponse},
     },
 )
-def get_expense(expense_id: int, request: Request):
+def get_savings_goal(goal_id: int, request: Request):
     try:
         if conn:
             vuser: User = request.state.user
@@ -54,22 +55,22 @@ def get_expense(expense_id: int, request: Request):
 
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM expenses WHERE expense_id = %s AND user_id = %s",
-                (expense_id, vuser.user_id),
+                "SELECT * FROM savings_goals WHERE goal_id = %s AND user_id = %s",
+                (goal_id, vuser.user_id),
             )
             row = cursor.fetchone()
             cursor.close()
 
             if not row:
-                return not_found_response(f"Expense ID {expense_id} not found")
+                return not_found_response(f"Savings goal ID {goal_id} not found")
 
             return JSONResponse(
                 status_code=200,
                 content=jsonable_encoder(
-                    ExpenseSuccessResponse(
+                    SavingsGoalSuccessResponse(
                         success=True,
-                        message="Expense fetched successfully",
-                        results=Expense(**dict(zip(column_names, row))),
+                        message="Savings goal fetched successfully",
+                        results=SavingsGoal(**dict(zip(column_names, row))),
                     ).model_dump()
                 ),
             )
@@ -82,83 +83,41 @@ def get_expense(expense_id: int, request: Request):
 
 
 @router.get(
-    "/get_expenses",
+    "/get_goals",
     responses={
-        200: {"model": ExpensesSuccessResponse},
+        200: {"model": SavingsGoalsSuccessResponse},
         404: {"model": BaseErrorResponse},
         500: {"model": BaseErrorResponse},
     },
 )
-def get_expenses(request: Request, expense_ids: str = Query(...)):
+def get_savings_goals(request: Request, goal_ids: str):
     try:
         if conn:
             vuser: User = request.state.user
             if not vuser:
                 return auth_error_response()
 
-            expense_ids = json_loads(expense_ids)
-            placeholders = ", ".join(["%s"] * len(expense_ids))
+            goal_ids = json_loads(goal_ids)
+            placeholders = ", ".join(["%s"] * len(goal_ids))
             cursor = conn.cursor()
             cursor.execute(
-                f"SELECT * FROM expenses WHERE expense_id IN ({placeholders}) AND user_id = %s",
-                tuple(expense_ids) + (vuser.user_id,),
+                f"SELECT * FROM savings_goals WHERE goal_id IN ({placeholders}) AND user_id = %s",
+                tuple(goal_ids) + (vuser.user_id,),
             )
             rows = cursor.fetchall()
             cursor.close()
 
             if not rows:
-                return not_found_response(f"No expenses found for IDs {expense_ids}")
+                return not_found_response(f"No savings goals found for IDs {goal_ids}")
 
-            expenses = [Expense(**dict(zip(column_names, row))) for row in rows]
+            goals = [SavingsGoal(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
                 status_code=200,
                 content=jsonable_encoder(
-                    ExpensesSuccessResponse(
-                        success=True, message="Expenses fetched", results=expenses
-                    ).model_dump()
-                ),
-            )
-    except MYSQLError as e:
-        logger.error(f"MySQL error: {e}")
-        return error_response(e)
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return error_response(e)
-
-
-@router.get(
-    "/get_all_expenses",
-    responses={
-        200: {"model": ExpensesSuccessResponse},
-        404: {"model": BaseErrorResponse},
-        500: {"model": BaseErrorResponse},
-    },
-)
-def get_all_expenses(request: Request):
-    try:
-        if conn:
-            vuser: User = request.state.user
-            if not vuser:
-                return auth_error_response()
-
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT * FROM expenses WHERE user_id = %s", (vuser.user_id,)
-            )
-            rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No expenses found for user ID {vuser.user_id}"
-                )
-
-            expenses = [Expense(**dict(zip(column_names, row))) for row in rows]
-            return JSONResponse(
-                status_code=200,
-                content=jsonable_encoder(
-                    ExpensesSuccessResponse(
-                        success=True, message="All expenses fetched", results=expenses
+                    SavingsGoalsSuccessResponse(
+                        success=True,
+                        message="Savings goals fetched",
+                        results=goals,
                     ).model_dump()
                 ),
             )
@@ -171,14 +130,14 @@ def get_all_expenses(request: Request):
 
 
 @router.post(
-    "/post_expense",
+    "/post_goal",
     responses={
-        200: {"model": ExpenseSuccessResponse},
+        200: {"model": SavingsGoalSuccessResponse},
         422: {"model": BaseErrorResponse},
         500: {"model": BaseErrorResponse},
     },
 )
-def create_expense(expense_data: CreateExpense, request: Request):
+def create_savings_goal(goal_data: CreateSavingsGoal, request: Request):
     try:
         if conn:
             vuser: User = request.state.user
@@ -187,31 +146,33 @@ def create_expense(expense_data: CreateExpense, request: Request):
 
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO expenses (user_id, amount, description, expense_date) VALUES (%s, %s, %s, %s)",
+                """
+                INSERT INTO savings_goals (user_id, name, target_amount, current_amount, target_date)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
                 (
-                    expense_data.user_id,
-                    expense_data.amount,
-                    expense_data.description,
-                    expense_data.expense_date,
+                    goal_data.user_id,
+                    goal_data.name,
+                    goal_data.target_amount,
+                    goal_data.current_amount,
+                    goal_data.target_date,
                 ),
             )
             conn.commit()
 
-            expense_id = cursor.lastrowid
-            cursor.execute(
-                "SELECT * FROM expenses WHERE expense_id = %s", (expense_id,)
-            )
+            goal_id = cursor.lastrowid
+            cursor.execute("SELECT * FROM savings_goals WHERE goal_id = %s", (goal_id,))
             row = cursor.fetchone()
             cursor.close()
 
             return JSONResponse(
                 status_code=200,
                 content=jsonable_encoder(
-                    ExpenseSuccessResponse(
+                    SavingsGoalSuccessResponse(
                         success=True,
-                        message="Expense created",
-                        results=Expense(**dict(zip(column_names, row))),
-                    ).model_dump(),
+                        message="Savings goal created",
+                        results=SavingsGoal(**dict(zip(column_names, row))),
+                    ).model_dump()
                 ),
             )
     except MYSQLError as e:
@@ -223,15 +184,15 @@ def create_expense(expense_data: CreateExpense, request: Request):
 
 
 @router.put(
-    "/put_expense",
+    "/put_goal",
     responses={
-        200: {"model": ExpenseSuccessResponse},
+        200: {"model": SavingsGoalSuccessResponse},
         404: {"model": BaseErrorResponse},
         422: {"model": BaseErrorResponse},
         500: {"model": BaseErrorResponse},
     },
 )
-def update_expense(update_data: UpdateExpense, request: Request):
+def update_savings_goal(update_data: UpdateSavingsGoal, request: Request):
     try:
         if conn:
             vuser: User = request.state.user
@@ -239,42 +200,41 @@ def update_expense(update_data: UpdateExpense, request: Request):
                 return auth_error_response()
 
             uud = update_data.model_dump(exclude_none=True)
-            expense_id = uud.get("expense_id")
+            goal_id = uud.get("goal_id")
 
-            if not expense_id:
-                return validation_error_response("expense_id is required")
+            if not goal_id:
+                return validation_error_response("goal_id is required")
 
-            update_fields = {k: v for k, v in uud.items() if k != "expense_id"}
+            update_fields = {k: v for k, v in uud.items() if k != "goal_id"}
             if not update_fields:
                 return validation_error_response("No fields provided to update")
 
             set_clause = ", ".join(f"{k} = %s" for k in update_fields)
-            values = tuple(update_fields.values()) + (expense_id,)
+            values = tuple(update_fields.values()) + (goal_id,)
             cursor = conn.cursor()
             cursor.execute(
-                f"UPDATE expenses SET {set_clause} WHERE expense_id = %s", values
+                f"UPDATE savings_goals SET {set_clause} WHERE goal_id = %s",
+                values,
             )
             conn.commit()
 
             if cursor.rowcount == 0:
                 cursor.close()
                 return not_found_response(
-                    f"Expense ID {expense_id} not found or not updated"
+                    f"Savings goal ID {goal_id} not found or not updated"
                 )
 
-            cursor.execute(
-                "SELECT * FROM expenses WHERE expense_id = %s", (expense_id,)
-            )
+            cursor.execute("SELECT * FROM savings_goals WHERE goal_id = %s", (goal_id,))
             row = cursor.fetchone()
             cursor.close()
 
             return JSONResponse(
                 status_code=200,
                 content=jsonable_encoder(
-                    ExpenseSuccessResponse(
+                    SavingsGoalSuccessResponse(
                         success=True,
-                        message="Expense updated",
-                        results=Expense(**dict(zip(column_names, row))),
+                        message="Savings goal updated",
+                        results=SavingsGoal(**dict(zip(column_names, row))),
                     ).model_dump()
                 ),
             )
@@ -287,14 +247,14 @@ def update_expense(update_data: UpdateExpense, request: Request):
 
 
 @router.delete(
-    "/delete_expense/{expense_id}",
+    "/delete_goal/{goal_id}",
     responses={
-        200: {"model": ExpenseSuccessResponse},
+        200: {"model": SavingsGoalSuccessResponse},
         404: {"model": BaseErrorResponse},
         500: {"model": BaseErrorResponse},
     },
 )
-def delete_expense(expense_id: int, request: Request):
+def delete_savings_goal(goal_id: int, request: Request):
     try:
         if conn:
             vuser: User = request.state.user
@@ -302,25 +262,25 @@ def delete_expense(expense_id: int, request: Request):
                 return auth_error_response()
 
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT * FROM expenses WHERE expense_id = %s", (expense_id,)
-            )
+            cursor.execute("SELECT * FROM savings_goals WHERE goal_id = %s", (goal_id,))
             row = cursor.fetchone()
 
             if not row:
                 cursor.close()
-                return not_found_response(f"Expense ID {expense_id} not found")
+                return not_found_response(f"Savings goal ID {goal_id} not found")
 
-            expense = Expense(**dict(zip(column_names, row)))
-            cursor.execute("DELETE FROM expenses WHERE expense_id = %s", (expense_id,))
+            goal = SavingsGoal(**dict(zip(column_names, row)))
+            cursor.execute("DELETE FROM savings_goals WHERE goal_id = %s", (goal_id,))
             conn.commit()
             cursor.close()
 
             return JSONResponse(
                 status_code=200,
                 content=jsonable_encoder(
-                    ExpenseSuccessResponse(
-                        success=True, message="Expense deleted", results=expense
+                    SavingsGoalSuccessResponse(
+                        success=True,
+                        message="Savings goal deleted",
+                        results=goal,
                     ).model_dump()
                 ),
             )
@@ -332,7 +292,6 @@ def delete_expense(expense_id: int, request: Request):
         return error_response(e)
 
 
-# Common Error Responses
 def error_response(e: Exception):
     return JSONResponse(
         status_code=500,

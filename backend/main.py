@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 from utils.logger import logger
 from dotenv import load_dotenv
 from middleware.jwt_auth import JWTAuthMiddleware
+from os import getenv as os_getenv
 
 from routes.user import router as user_router
 from routes.income import router as income_router
@@ -16,15 +16,13 @@ from routes.savings_goals import router as savings_goals_router
 load_dotenv()
 
 app = FastAPI()
-logger.info("qwefgh")
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace "*" with specific origins if needed
+    allow_origins=[os_getenv("FRONTEND_URL"), "*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.add_middleware(JWTAuthMiddleware)

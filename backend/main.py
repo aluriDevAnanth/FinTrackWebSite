@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from utils.logger import logger
 from dotenv import load_dotenv
@@ -16,6 +17,15 @@ load_dotenv()
 
 app = FastAPI()
 logger.info("qwefgh")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace "*" with specific origins if needed
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 app.add_middleware(JWTAuthMiddleware)
 

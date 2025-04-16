@@ -23,7 +23,7 @@ print(FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=["https://fin-track-web-site.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

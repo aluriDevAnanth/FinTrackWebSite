@@ -319,7 +319,7 @@ export default function SavingsGoals() {
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = goals.filter((item) =>
+  const filteredItems = goals?.filter((item) =>
     [item.name, item.current_amount, item.target_amount, item.target_date]
       .join(" ")
       .toLowerCase()

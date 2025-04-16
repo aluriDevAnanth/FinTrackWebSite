@@ -286,7 +286,7 @@ export default function Budget() {
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = budgets.filter((item) =>
+  const filteredItems = budgets?.filter((item) =>
     [item.amount, item.start_date, item.end_date]
       .join(" ")
       .toLowerCase()

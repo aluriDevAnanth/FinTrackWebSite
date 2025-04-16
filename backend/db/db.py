@@ -5,11 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-host, user, password, database = (
+host, user, password, database, port = (
     os.getenv("HOST"),
     os.getenv("USER"),
     os.getenv("PASSWORD"),
     os.getenv("DATABASE"),
+    os.getenv("PORT"),
 )
 
 
@@ -20,6 +21,7 @@ def create_connection():
             user=user,
             password=password,
             database=database,
+            port=port,
         )
         if connection.is_connected():
             return connection

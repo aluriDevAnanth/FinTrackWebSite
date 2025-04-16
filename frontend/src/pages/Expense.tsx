@@ -303,7 +303,7 @@ export default function Expense() {
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = expenses.filter((item) =>
+  const filteredItems = expenses?.filter((item) =>
     [item.amount, item.description ?? "", item.expense_date]
       .join(" ")
       .toLowerCase()
@@ -398,50 +398,48 @@ export default function Expense() {
   }, [auth]);
 
   return auth ? (
-    expenses && expenses.length > 0 && (
-      <div className="container-fluid px-5">
-        <div className="d-flex">
-          <h3 className="mb-3">Expense Table</h3>
-          <div className="ms-3">
-            <button className="btn btn-success">
-              <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
-                +
-              </span>
-            </button>
-          </div>
+    <div className="container-fluid px-5">
+      <div className="d-flex">
+        <h3 className="mb-3">Expense Table</h3>
+        <div className="ms-3">
+          <button className="btn btn-success">
+            <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
+              +
+            </span>
+          </button>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          pagination
-          paginationResetDefaultPage={resetPaginationToggle}
-          subHeader
-          subHeaderComponent={subHeaderComponentMemo}
-          selectableRows
-          persistTableHead
-          highlightOnHover
-          responsive
-          theme={theme}
-        />
-
-        {addShow && (
-          <AddExpenseModal
-            setExpenses={setExpenses}
-            show={addShow}
-            handleClose={() => setAddShow(false)}
-          />
-        )}
-
-        {editShow && (
-          <EditExpenseModal
-            setExpenses={setExpenses}
-            expense={editShow}
-            handleClose={() => setEditShow(null)}
-          />
-        )}
       </div>
-    )
+
+      <DataTable
+        columns={columns}
+        data={filteredItems}
+        pagination
+        paginationResetDefaultPage={resetPaginationToggle}
+        subHeader
+        subHeaderComponent={subHeaderComponentMemo}
+        selectableRows
+        persistTableHead
+        highlightOnHover
+        responsive
+        theme={theme}
+      />
+
+      {addShow && (
+        <AddExpenseModal
+          setExpenses={setExpenses}
+          show={addShow}
+          handleClose={() => setAddShow(false)}
+        />
+      )}
+
+      {editShow && (
+        <EditExpenseModal
+          setExpenses={setExpenses}
+          expense={editShow}
+          handleClose={() => setEditShow(null)}
+        />
+      )}
+    </div>
   ) : (
     <div className="w-100 text-center text-danger">
       <p>Login to access your details</p>

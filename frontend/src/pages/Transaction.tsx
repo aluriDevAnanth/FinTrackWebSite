@@ -313,7 +313,7 @@ export default function Transaction() {
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = transactions.filter((item) =>
+  const filteredItems = transactions?.filter((item) =>
     [item.amount, item.description ?? "", item.type, item.transaction_date]
       .join(" ")
       .toLowerCase()

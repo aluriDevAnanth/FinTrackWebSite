@@ -304,7 +304,7 @@ export default function Income() {
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = incomes.filter((item) =>
+  const filteredItems = incomes?.filter((item) =>
     [item.amount, item.description, item.income_date]
       .join(" ")
       .toLowerCase()
@@ -404,54 +404,52 @@ export default function Income() {
   ];
 
   return auth ? (
-    incomes && incomes.length > 0 && (
-      <div className="container-fluid px-5" style={{ maxWidth: "100vw" }}>
-        <div className="d-flex">
-          <h3 className="mb-3">Income Table</h3>
-          <div className="ms-3">
-            <button className="btn btn-success">
-              <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
-                +
-              </span>
-            </button>
-          </div>
+    <div className="container-fluid px-5" style={{ maxWidth: "100vw" }}>
+      <div className="d-flex">
+        <h3 className="mb-3">Income Table</h3>
+        <div className="ms-3">
+          <button className="btn btn-success">
+            <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
+              +
+            </span>
+          </button>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          pagination
-          paginationResetDefaultPage={resetPaginationToggle}
-          subHeader
-          subHeaderComponent={subHeaderComponentMemo}
-          selectableRows
-          persistTableHead
-          highlightOnHover
-          responsive
-          theme={theme}
-        />
-
-        {addShow && (
-          <div>
-            <AddIncomeModal
-              setIncomes={setIncomes}
-              show={addShow}
-              handleClose={() => setAddShow(false)}
-            />
-          </div>
-        )}
-
-        {editShow && (
-          <div>
-            <EditIncomeModal
-              setIncomes={setIncomes}
-              income={editShow}
-              handleClose={() => setEditShow(null)}
-            />
-          </div>
-        )}
       </div>
-    )
+
+      <DataTable
+        columns={columns}
+        data={filteredItems}
+        pagination
+        paginationResetDefaultPage={resetPaginationToggle}
+        subHeader
+        subHeaderComponent={subHeaderComponentMemo}
+        selectableRows
+        persistTableHead
+        highlightOnHover
+        responsive
+        theme={theme}
+      />
+
+      {addShow && (
+        <div>
+          <AddIncomeModal
+            setIncomes={setIncomes}
+            show={addShow}
+            handleClose={() => setAddShow(false)}
+          />
+        </div>
+      )}
+
+      {editShow && (
+        <div>
+          <EditIncomeModal
+            setIncomes={setIncomes}
+            income={editShow}
+            handleClose={() => setEditShow(null)}
+          />
+        </div>
+      )}
+    </div>
   ) : (
     <div className="w-100 text-center text-danger">
       <p>Login to access your details</p>

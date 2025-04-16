@@ -21,7 +21,7 @@ print([os_getenv("FRONTEND_URL")])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os_getenv("FRONTEND_URL")],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,3 +41,7 @@ app.include_router(savings_goals_router)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+@app.get("/cors-check")
+def cors_check():
+    return {"origin": os_getenv("FRONTEND_URL")}

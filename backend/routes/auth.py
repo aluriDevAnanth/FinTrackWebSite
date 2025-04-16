@@ -36,6 +36,12 @@ class LoginUser(BaseModel):
     password: str
 
 
+class SignupUser(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
 class AuthUser(BaseModel):
     jwt: str
 
@@ -183,6 +189,94 @@ def auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
                         results=LoginResults(
                             jwt="",
                             user=user,
+                        ),
+                    )
+                ),
+            )
+
+    except MySQLError as e:
+        logger.error(f"MySQL error: {e}")
+        return error_response(e)
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        return validation_error_response(e)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return error_response(e)
+
+
+@router.post(
+    "/signup",
+    responses={
+        201: {
+            "model": LoginSuccessResponse,
+            "description": "User created successfully",
+        },
+        400: {"model": BaseErrorResponse, "description": "Bad request"},
+        422: {"model": BaseErrorResponse, "description": "Validation error"},
+        500: {"model": BaseErrorResponse, "description": "Internal server error"},
+    },
+)
+def signup(user_data: SignupUser):
+    try:
+        if conn:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT * FROM users WHERE username = %s OR email = %s",
+                (user_data.username, user_data.username),
+            )
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content=BaseErrorResponse(
+                        success=False,
+                        errorType="UserAlreadyExists",
+                        error="Username or email already exists.",
+                    ).model_dump(),
+                )
+
+            hashed_password = sha256(user_data.password.encode()).hexdigest()
+
+            cursor.execute(
+                "INSERT INTO users (username, email, password_hash ) "
+                "VALUES (%s, %s, %s )",
+                (user_data.username, user_data.email, hashed_password),
+            )
+            conn.commit()
+
+            cursor.execute(
+                "SELECT * FROM users WHERE username = %s OR email = %s",
+                (user_data.username, user_data.email),
+            )
+            new_user_data = cursor.fetchone()
+
+            new_user = User(**dict(zip(column_names, new_user_data)))
+
+            expiration = datetime.now(tz=timezone.utc) + timedelta(days=3.0)
+            token = jwt_encode(
+                payload={
+                    "user_id": new_user.user_id,
+                    "username": new_user.username,
+                    "email": new_user.email,
+                    "exp": expiration,
+                    "expiso": expiration.isoformat(),
+                },
+                key=JWT_SECRET_KEY,
+                algorithm="HS256",
+            )
+
+            return JSONResponse(
+                status_code=status.HTTP_201_CREATED,
+                content=jsonable_encoder(
+                    LoginSuccessResponse(
+                        success=True,
+                        message=f"User created with id {new_user.user_id}",
+                        results=LoginResults(
+                            jwt=token,
+                            user=new_user,
                         ),
                     )
                 ),

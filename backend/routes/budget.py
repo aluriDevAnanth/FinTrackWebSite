@@ -128,7 +128,7 @@ def get_budgets(request: Request, budget_ids: str):
 
 
 @router.get(
-    "/get_user_budgets",
+    "/get_all_budgets",
     responses={
         200: {"model": BudgetsSuccessResponse},
         404: {"model": BaseErrorResponse},

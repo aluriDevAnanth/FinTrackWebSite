@@ -174,7 +174,7 @@ def auth(credentials: HTTPAuthorizationCredentials = Depends(security)):
                     content=BaseErrorResponse(
                         success=False,
                         errorType="InvalidUsernameOrEmail",
-                        error=f"User with {auth_token_data["username"]} not found.",
+                        error=f'User with {auth_token_data["username"]} not found.',
                     ).model_dump(),
                 )
 

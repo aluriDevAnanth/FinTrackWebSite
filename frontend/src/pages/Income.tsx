@@ -66,7 +66,7 @@ function AddIncomeModal({
     fetch(BASE_URL + "/income/post_income", requestOptions)
       .then((response) => response.text())
       .then((result) => JSON.parse(result))
-      .then((result) => setIncomes((prev) => [...prev, result.results]))
+      .then((result) => setIncomes((prev) => [...(prev || []), result.results]))
       .catch((error) => console.error(error));
 
     formikHelpers.setSubmitting(false);

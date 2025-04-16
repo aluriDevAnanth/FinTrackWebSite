@@ -67,7 +67,7 @@ function AddBudgetModal({
       body: JSON.stringify(values),
     })
       .then((res) => res.json())
-      .then((res) => setBudgets((prev) => [...prev, res.results]))
+      .then((res) => setBudgets((prev) => [...(prev || []), res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);

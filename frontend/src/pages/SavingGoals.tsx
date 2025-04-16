@@ -71,7 +71,7 @@ function AddSavingsModal({
       body: JSON.stringify(values),
     })
       .then((res) => res.json())
-      .then((res) => setGoals((prev) => [...prev, res.results]))
+      .then((res) => setGoals((prev) => [...(prev || []), res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);

@@ -68,7 +68,7 @@ function AddExpenseModal({
 
     fetch(BASE_URL + "/expense/post_expense", requestOptions)
       .then((res) => res.json())
-      .then((res) => setExpenses((prev) => [...prev, res.results]))
+      .then((res) => setExpenses((prev) => [...(prev || []), res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);

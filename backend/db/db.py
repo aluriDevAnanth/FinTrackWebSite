@@ -21,7 +21,7 @@ def create_connection():
             user=user,
             password=password,
             database=database,
-            port=port,
+            port=port or 3306,
         )
         if connection.is_connected():
             return connection

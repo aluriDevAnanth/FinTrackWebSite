@@ -70,7 +70,7 @@ function AddTransactionModal({
       body: JSON.stringify(values),
     })
       .then((res) => res.json())
-      .then((res) => setTransactions((prev) => [...prev, res.results]))
+      .then((res) => setTransactions((prev) => [...(prev || []), res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);

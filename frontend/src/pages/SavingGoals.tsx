@@ -305,14 +305,14 @@ const FilterComponent = ({
       value={filterText}
       onChange={onFilter}
     />
-    <Button variant="outline-secondary" onClick={onClear}>
+    <Button className="fw-bold " variant="outline-secondary" onClick={onClear}>
       Clear
     </Button>
   </div>
 );
 
 export default function SavingsGoals() {
-  const { auth } = useAuth();
+  const { auth, theme } = useAuth();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [addShow, setAddShow] = useState(false);
   const [editShow, setEditShow] = useState<SavingsGoal | null>(null);
@@ -438,7 +438,7 @@ export default function SavingsGoals() {
         persistTableHead
         highlightOnHover
         responsive
-        theme="dark"
+        theme={theme}
       />
 
       {addShow && (

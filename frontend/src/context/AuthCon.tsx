@@ -14,6 +14,8 @@ interface AuthContextType {
   login: (user: User, auth: string) => void;
   logout: () => void;
   auth: string;
+  toggleTheme: () => void;
+  theme: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [auth, setAuth] = useState<string | null>(localStorage.getItem("auth"));
+  const [theme, setTheme] = useState<string>(
+    localStorage.getItem("FintrackTheme") ?? "dark"
+  );
 
   const login = (user: User, auth: string) => {
     console.log({ user, auth });
@@ -65,8 +70,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     fetchUser();
   }, [auth]);
 
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-bs-theme", newTheme);
+    localStorage.setItem("FintrackTheme", newTheme);
+  };
+
+  useEffect(() => {
+    if (theme) return;
+    localStorage.setItem("FintrackTheme", theme);
+    document.documentElement.setAttribute("data-bs-theme", theme);
+  }, [theme]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, auth: auth || "" }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, auth: auth || "", toggleTheme, theme }}
+    >
       {children}
     </AuthContext.Provider>
   );

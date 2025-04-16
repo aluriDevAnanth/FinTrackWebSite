@@ -290,14 +290,14 @@ const FilterComponent = ({
       value={filterText}
       onChange={onFilter}
     />
-    <Button variant="outline-secondary" onClick={onClear}>
+    <Button className="fw-bold " variant="outline-secondary" onClick={onClear}>
       Clear
     </Button>
   </div>
 );
 
 export default function Income() {
-  const { auth } = useAuth();
+  const { auth, theme } = useAuth();
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [addShow, setAddShow] = useState<boolean>();
   const [editShow, setEditShow] = useState<Income | null>(null);
@@ -428,7 +428,7 @@ export default function Income() {
           persistTableHead
           highlightOnHover
           responsive
-          theme="dark"
+          theme={theme}
         />
 
         {addShow && (

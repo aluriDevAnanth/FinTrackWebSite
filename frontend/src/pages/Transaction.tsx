@@ -299,14 +299,14 @@ const FilterComponent = ({
       value={filterText}
       onChange={onFilter}
     />
-    <Button variant="outline-secondary" onClick={onClear}>
+    <Button className="fw-bold " variant="outline-secondary" onClick={onClear}>
       Clear
     </Button>
   </div>
 );
 
 export default function Transaction() {
-  const { auth } = useAuth();
+  const { theme, auth } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [addShow, setAddShow] = useState(false);
   const [editShow, setEditShow] = useState<Transaction | null>(null);
@@ -432,7 +432,7 @@ export default function Transaction() {
         persistTableHead
         highlightOnHover
         responsive
-        theme="dark"
+        theme={theme}
       />
 
       {addShow && (

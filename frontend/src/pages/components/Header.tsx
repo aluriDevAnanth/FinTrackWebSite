@@ -5,7 +5,7 @@ import AuthModal from "./AuthModal";
 import { Link, useLocation } from "react-router";
 
 function Header() {
-  const { auth, login, logout } = useAuth();
+  const { auth, login, logout, toggleTheme } = useAuth();
   const [show, setShow] = useState<string>("");
   const location = useLocation();
 
@@ -26,6 +26,7 @@ function Header() {
                 as={Link}
                 to="/income"
                 active={location.pathname === "/income"}
+                className={(location.pathname === "/income" && "fw-bold") || ""}
               >
                 Incomes
               </Nav.Link>
@@ -33,6 +34,9 @@ function Header() {
                 as={Link}
                 to="/expense"
                 active={location.pathname === "/expense"}
+                className={
+                  (location.pathname === "/expense" && "fw-bold") || ""
+                }
               >
                 Expenses
               </Nav.Link>
@@ -40,6 +44,9 @@ function Header() {
                 as={Link}
                 to="/transaction"
                 active={location.pathname === "/transaction"}
+                className={
+                  (location.pathname === "/transaction" && "fw-bold") || ""
+                }
               >
                 Transactions
               </Nav.Link>
@@ -47,6 +54,7 @@ function Header() {
                 as={Link}
                 to="/budget"
                 active={location.pathname === "/budget"}
+                className={(location.pathname === "/budget" && "fw-bold") || ""}
               >
                 Budget
               </Nav.Link>
@@ -54,6 +62,9 @@ function Header() {
                 as={Link}
                 to="/savings_goals"
                 active={location.pathname === "/savings_goals"}
+                className={
+                  (location.pathname === "/savings_goals" && "fw-bold") || ""
+                }
               >
                 Saving Goals
               </Nav.Link>
@@ -74,6 +85,14 @@ function Header() {
                 >
                   Sign-up
                 </Button>
+
+                <Button
+                  className="ms-3"
+                  variant="outline-secondary"
+                  onClick={toggleTheme}
+                >
+                  Toggle Theme
+                </Button>
               </div>
             ) : (
               <div className="text-end">
@@ -82,6 +101,13 @@ function Header() {
                 </Link>
                 <Button onClick={() => logout()} variant="danger">
                   Logout
+                </Button>
+                <Button
+                  className="ms-3 fw-bolder"
+                  variant="outline-secondary"
+                  onClick={toggleTheme}
+                >
+                  Toggle Theme
                 </Button>
               </div>
             )}

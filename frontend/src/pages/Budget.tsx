@@ -272,14 +272,14 @@ const FilterComponent = ({
       value={filterText}
       onChange={onFilter}
     />
-    <Button variant="outline-secondary" onClick={onClear}>
+    <Button className="fw-bold " variant="outline-secondary" onClick={onClear}>
       Clear
     </Button>
   </div>
 );
 
 export default function Budget() {
-  const { auth } = useAuth();
+  const { auth, theme } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [addShow, setAddShow] = useState(false);
   const [editShow, setEditShow] = useState<Budget | null>(null);
@@ -397,7 +397,7 @@ export default function Budget() {
         persistTableHead
         highlightOnHover
         responsive
-        theme="dark"
+        theme={theme}
       />
 
       {addShow && (

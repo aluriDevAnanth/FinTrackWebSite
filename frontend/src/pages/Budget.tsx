@@ -14,22 +14,22 @@ import { Form, Button, Modal } from "react-bootstrap";
 
 const BASE_URL = process.env.BASE_URL;
 
-type Expense = {
-  description?: string;
+type Budget = {
   user_id: number;
-  amount: number;
   created_at: Date;
-  expense_id: number;
-  expense_date: Date;
+  amount: number;
+  budget_id: number;
+  start_date: Date;
+  end_date: Date;
 };
 
-function AddExpenseModal({
+function AddBudgetModal({
   show,
-  setExpenses,
+  setBudgets,
   handleClose,
 }: {
   show: boolean;
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
   handleClose: () => void;
 }) {
   const { user, auth } = useAuth();
@@ -37,8 +37,8 @@ function AddExpenseModal({
   const initialValues = {
     user_id: user?.user_id,
     amount: "",
-    description: "",
-    expense_date: "",
+    start_date: "",
+    end_date: "",
   };
 
   const validationSchema = Yup.object({
@@ -46,8 +46,10 @@ function AddExpenseModal({
     amount: Yup.number()
       .required("Amount is required")
       .positive("Amount must be positive"),
-    description: Yup.string().required("Description is required"),
-    expense_date: Yup.date().required("Expense Date is required"),
+    start_date: Yup.date().required("Start date is required"),
+    end_date: Yup.date()
+      .required("End date is required")
+      .min(Yup.ref("start_date"), "End date must be after start date"),
   });
 
   const handleSubmit = (
@@ -56,19 +58,16 @@ function AddExpenseModal({
   ) => {
     formikHelpers.setSubmitting(true);
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    const requestOptions = {
+    fetch(BASE_URL + "/budget/post_budget", {
       method: "POST",
-      headers: myHeaders,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + auth,
+      },
       body: JSON.stringify(values),
-    };
-
-    fetch(BASE_URL + "/expense/post_expense", requestOptions)
+    })
       .then((res) => res.json())
-      .then((res) => setExpenses((prev) => [...prev, res.results]))
+      .then((res) => setBudgets((prev) => [...prev, res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);
@@ -80,7 +79,7 @@ function AddExpenseModal({
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Add Expense</Modal.Title>
+        <Modal.Title>Add Budget</Modal.Title>
       </Modal.Header>
       <Formik
         initialValues={initialValues}
@@ -90,12 +89,12 @@ function AddExpenseModal({
         {({ isSubmitting, errors, touched }) => (
           <FormikForm>
             <Modal.Body>
-              <Form.Group className="form-floating mb-3" controlId="amount">
+              <Form.Group className="form-floating mb-3">
                 <Field
                   name="amount"
                   type="number"
-                  placeholder="Amount"
                   as={Form.Control}
+                  placeholder="Amount"
                   isInvalid={!!(errors.amount && touched.amount)}
                 />
                 <Form.Label>Amount</Form.Label>
@@ -104,41 +103,34 @@ function AddExpenseModal({
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group
-                className="form-floating mb-3"
-                controlId="description"
-              >
+              <Form.Group className="form-floating mb-3">
                 <Field
-                  name="description"
-                  type="text"
-                  placeholder="Description"
+                  name="start_date"
+                  type="date"
                   as={Form.Control}
-                  isInvalid={!!(errors.description && touched.description)}
+                  isInvalid={!!(errors.start_date && touched.start_date)}
                 />
-                <Form.Label>Description</Form.Label>
+                <Form.Label>Start Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="description" />
+                  <ErrorMessage name="start_date" />
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group
-                className="form-floating mb-3"
-                controlId="expense_date"
-              >
+              <Form.Group className="form-floating mb-3">
                 <Field
-                  name="expense_date"
+                  name="end_date"
                   type="date"
-                  placeholder="Expense Date"
                   as={Form.Control}
-                  isInvalid={!!(errors.expense_date && touched.expense_date)}
+                  isInvalid={!!(errors.end_date && touched.end_date)}
                 />
-                <Form.Label>Expense Date</Form.Label>
+                <Form.Label>End Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="expense_date" />
+                  <ErrorMessage name="end_date" />
                 </Form.Control.Feedback>
               </Form.Group>
+
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Add Expense
+                Add Budget
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -148,13 +140,13 @@ function AddExpenseModal({
   );
 }
 
-function EditExpenseModal({
-  expense,
-  setExpenses,
+function EditBudgetModal({
+  budget,
+  setBudgets,
   handleClose,
 }: {
-  expense: Expense;
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  budget: Budget;
+  setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
   handleClose: () => void;
 }) {
   const { auth } = useAuth();
@@ -164,32 +156,31 @@ function EditExpenseModal({
     amount: Yup.number()
       .required("Amount is required")
       .positive("Amount must be positive"),
-    description: Yup.string().required("Description is required"),
-    expense_date: Yup.date().required("Expense Date is required"),
+    start_date: Yup.date().required("Start date is required"),
+    end_date: Yup.date()
+      .required("End date is required")
+      .min(Yup.ref("start_date"), "End date must be after start date"),
   });
 
   const handleSubmit = (
-    values: typeof expense,
-    formikHelpers: FormikHelpers<typeof expense>
+    values: typeof budget,
+    formikHelpers: FormikHelpers<typeof budget>
   ) => {
     formikHelpers.setSubmitting(true);
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    const requestOptions = {
+    fetch(BASE_URL + "/budget/put_budget", {
       method: "PUT",
-      headers: myHeaders,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + auth,
+      },
       body: JSON.stringify(values),
-    };
-
-    fetch(BASE_URL + "/expense/put_expense", requestOptions)
+    })
       .then((res) => res.json())
       .then((res) =>
-        setExpenses((prev) =>
-          prev.map((exp) =>
-            exp.expense_id === res.results.expense_id ? res.results : exp
+        setBudgets((prev) =>
+          prev.map((b) =>
+            b.budget_id === res.results.budget_id ? res.results : b
           )
         )
       )
@@ -201,24 +192,24 @@ function EditExpenseModal({
   };
 
   return (
-    <Modal show={!!expense} onHide={handleClose}>
+    <Modal show={!!budget} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Edit Expense</Modal.Title>
+        <Modal.Title>Edit Budget</Modal.Title>
       </Modal.Header>
       <Formik
-        initialValues={expense}
+        initialValues={budget}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, errors, touched }) => (
           <FormikForm>
             <Modal.Body>
-              <Form.Group className="form-floating mb-3" controlId="amount">
+              <Form.Group className="form-floating mb-3">
                 <Field
                   name="amount"
                   type="number"
-                  placeholder="Amount"
                   as={Form.Control}
+                  placeholder="Amount"
                   isInvalid={!!(errors.amount && touched.amount)}
                 />
                 <Form.Label>Amount</Form.Label>
@@ -227,41 +218,34 @@ function EditExpenseModal({
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group
-                className="form-floating mb-3"
-                controlId="description"
-              >
+              <Form.Group className="form-floating mb-3">
                 <Field
-                  name="description"
-                  type="text"
-                  placeholder="Description"
+                  name="start_date"
+                  type="date"
                   as={Form.Control}
-                  isInvalid={!!(errors.description && touched.description)}
+                  isInvalid={!!(errors.start_date && touched.start_date)}
                 />
-                <Form.Label>Description</Form.Label>
+                <Form.Label>Start Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="description" />
+                  <ErrorMessage name="start_date" />
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group
-                className="form-floating mb-3"
-                controlId="expense_date"
-              >
+              <Form.Group className="form-floating mb-3">
                 <Field
-                  name="expense_date"
+                  name="end_date"
                   type="date"
-                  placeholder="Expense Date"
                   as={Form.Control}
-                  isInvalid={!!(errors.expense_date && touched.expense_date)}
+                  isInvalid={!!(errors.end_date && touched.end_date)}
                 />
-                <Form.Label>Expense Date</Form.Label>
+                <Form.Label>End Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="expense_date" />
+                  <ErrorMessage name="end_date" />
                 </Form.Control.Feedback>
               </Form.Group>
+
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Update Expense
+                Update Budget
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -294,16 +278,16 @@ const FilterComponent = ({
   </div>
 );
 
-export default function Expense() {
+export default function Budget() {
   const { auth } = useAuth();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [addShow, setAddShow] = useState(false);
-  const [editShow, setEditShow] = useState<Expense | null>(null);
+  const [editShow, setEditShow] = useState<Budget | null>(null);
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = expenses.filter((item) =>
-    [item.amount, item.description ?? "", item.expense_date]
+  const filteredItems = budgets.filter((item) =>
+    [item.amount, item.start_date, item.end_date]
       .join(" ")
       .toLowerCase()
       .includes(filterText.toLowerCase())
@@ -326,27 +310,26 @@ export default function Expense() {
     );
   }, [filterText, resetPaginationToggle]);
 
-  const deleteExpense = (expense: Expense) => {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    fetch(`${BASE_URL}/expense/delete_expense/${expense.expense_id}`, {
+  const deleteBudget = (budget: Budget) => {
+    fetch(`${BASE_URL}/budget/delete_budget/${budget.budget_id}`, {
       method: "DELETE",
-      headers: myHeaders,
+      headers: {
+        Authorization: "Bearer " + auth,
+      },
     })
       .then((res) => res.json())
       .then((res) =>
-        setExpenses((prev) =>
-          prev.filter((exp) => exp.expense_id !== res.results.expense_id)
+        setBudgets((prev) =>
+          prev.filter((b) => b.budget_id !== res.results.budget_id)
         )
       )
       .catch(console.error);
   };
 
-  const columns: TableColumn<Expense>[] = [
+  const columns: TableColumn<Budget>[] = [
     {
       name: "Options",
-      cell: (row: Expense) => (
+      cell: (row) => (
         <div className="d-flex">
           <button
             className="btn btn-primary me-2"
@@ -355,10 +338,8 @@ export default function Expense() {
             Edit
           </button>
           <button
-            onClick={() => {
-              if (confirm("Are you sure?")) deleteExpense(row);
-            }}
             className="btn btn-danger"
+            onClick={() => confirm("Are you sure?") && deleteBudget(row)}
           >
             Delete
           </button>
@@ -371,76 +352,69 @@ export default function Expense() {
       sortable: true,
     },
     {
-      name: "Description",
-      selector: (row) => row.description || "-",
+      name: "Start Date",
+      selector: (row) => new Date(row.start_date).toISOString().split("T")[0],
+      sortable: true,
     },
     {
-      name: "Expense Date",
-      selector: (row) => new Date(row.expense_date).toISOString().split("T")[0],
+      name: "End Date",
+      selector: (row) => new Date(row.end_date).toISOString().split("T")[0],
       sortable: true,
     },
   ];
 
   useEffect(() => {
     if (!auth) return;
-
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    fetch(`${BASE_URL}/expense/get_all_expenses`, {
-      method: "GET",
-      headers: myHeaders,
+    fetch(`${BASE_URL}/budget/get_all_budgets`, {
+      headers: {
+        Authorization: "Bearer " + auth,
+      },
     })
       .then((res) => res.json())
-      .then((res) => setExpenses(res.results))
+      .then((res) => setBudgets(res.results))
       .catch(console.error);
   }, [auth]);
 
   return auth ? (
-    expenses && expenses.length > 0 && (
-      <div className="container-fluid px-5">
-        <div className="d-flex">
-          <h3 className="mb-3">Expense Table</h3>
-          <div className="ms-3">
-            <button className="btn btn-success">
-              <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
-                +
-              </span>
-            </button>
-          </div>
+    <div className="container-fluid px-5">
+      <div className="d-flex">
+        <h3 className="mb-3">Budget Table</h3>
+        <div className="ms-3">
+          <button className="btn btn-success" onClick={() => setAddShow(true)}>
+            <span className="fs-5 fw-bolder">+</span>
+          </button>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          pagination
-          paginationResetDefaultPage={resetPaginationToggle}
-          subHeader
-          subHeaderComponent={subHeaderComponentMemo}
-          selectableRows
-          persistTableHead
-          highlightOnHover
-          responsive
-          theme="dark"
-        />
-
-        {addShow && (
-          <AddExpenseModal
-            setExpenses={setExpenses}
-            show={addShow}
-            handleClose={() => setAddShow(false)}
-          />
-        )}
-
-        {editShow && (
-          <EditExpenseModal
-            setExpenses={setExpenses}
-            expense={editShow}
-            handleClose={() => setEditShow(null)}
-          />
-        )}
       </div>
-    )
+
+      <DataTable
+        columns={columns}
+        data={filteredItems}
+        pagination
+        paginationResetDefaultPage={resetPaginationToggle}
+        subHeader
+        subHeaderComponent={subHeaderComponentMemo}
+        selectableRows
+        persistTableHead
+        highlightOnHover
+        responsive
+        theme="dark"
+      />
+
+      {addShow && (
+        <AddBudgetModal
+          show={addShow}
+          setBudgets={setBudgets}
+          handleClose={() => setAddShow(false)}
+        />
+      )}
+      {editShow && (
+        <EditBudgetModal
+          budget={editShow}
+          setBudgets={setBudgets}
+          handleClose={() => setEditShow(null)}
+        />
+      )}
+    </div>
   ) : (
     <div className="w-100 text-center text-danger">
       <p>Login to access your details</p>

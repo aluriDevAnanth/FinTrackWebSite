@@ -1,7 +1,11 @@
 import DataTable from "react-data-table-component";
 import type { TableColumn } from "react-data-table-component";
+import type { Income } from "../schemas";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthCon";
+
+const BASE_URL = process.env.BASE_URL;
+
 import {
   Formik,
   Form as FormikForm,
@@ -12,24 +16,13 @@ import {
 import * as Yup from "yup";
 import { Form, Button, Modal } from "react-bootstrap";
 
-const BASE_URL = process.env.BASE_URL;
-
-type Expense = {
-  description?: string;
-  user_id: number;
-  amount: number;
-  created_at: Date;
-  expense_id: number;
-  expense_date: Date;
-};
-
-function AddExpenseModal({
+function AddIncomeModal({
   show,
-  setExpenses,
+  setIncomes,
   handleClose,
 }: {
   show: boolean;
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  setIncomes: React.Dispatch<React.SetStateAction<Income[]>>;
   handleClose: () => void;
 }) {
   const { user, auth } = useAuth();
@@ -38,16 +31,16 @@ function AddExpenseModal({
     user_id: user?.user_id,
     amount: "",
     description: "",
-    expense_date: "",
+    income_date: "",
   };
 
   const validationSchema = Yup.object({
-    user_id: Yup.number().required("User ID is required"),
+    user_id: Yup.string().required("User ID is required"),
     amount: Yup.number()
       .required("Amount is required")
       .positive("Amount must be positive"),
     description: Yup.string().required("Description is required"),
-    expense_date: Yup.date().required("Expense Date is required"),
+    income_date: Yup.date().required("Income Date is required"),
   });
 
   const handleSubmit = (
@@ -56,31 +49,35 @@ function AddExpenseModal({
   ) => {
     formikHelpers.setSubmitting(true);
 
+    console.log("Form Values:", values);
+
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", "Bearer " + auth);
 
+    const raw = JSON.stringify(values);
+
     const requestOptions = {
       method: "POST",
       headers: myHeaders,
-      body: JSON.stringify(values),
+      body: raw,
     };
 
-    fetch(BASE_URL + "/expense/post_expense", requestOptions)
-      .then((res) => res.json())
-      .then((res) => setExpenses((prev) => [...prev, res.results]))
-      .catch(console.error)
-      .finally(() => {
-        formikHelpers.setSubmitting(false);
-        formikHelpers.resetForm();
-        handleClose();
-      });
+    fetch(BASE_URL + "/income/post_income", requestOptions)
+      .then((response) => response.text())
+      .then((result) => JSON.parse(result))
+      .then((result) => setIncomes((prev) => [...prev, result.results]))
+      .catch((error) => console.error(error));
+
+    formikHelpers.setSubmitting(false);
+    formikHelpers.resetForm();
+    handleClose();
   };
 
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Add Expense</Modal.Title>
+        <Modal.Title>Add Income</Modal.Title>
       </Modal.Header>
       <Formik
         initialValues={initialValues}
@@ -123,22 +120,22 @@ function AddExpenseModal({
 
               <Form.Group
                 className="form-floating mb-3"
-                controlId="expense_date"
+                controlId="income_date"
               >
                 <Field
-                  name="expense_date"
+                  name="income_date"
                   type="date"
-                  placeholder="Expense Date"
+                  placeholder="Income Date"
                   as={Form.Control}
-                  isInvalid={!!(errors.expense_date && touched.expense_date)}
+                  isInvalid={!!(errors.income_date && touched.income_date)}
                 />
-                <Form.Label>Expense Date</Form.Label>
+                <Form.Label>Income Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="expense_date" />
+                  <ErrorMessage name="income_date" />
                 </Form.Control.Feedback>
               </Form.Group>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Add Expense
+                Add Income
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -148,65 +145,70 @@ function AddExpenseModal({
   );
 }
 
-function EditExpenseModal({
-  expense,
-  setExpenses,
+function EditIncomeModal({
+  income,
+  setIncomes,
   handleClose,
 }: {
-  expense: Expense;
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  income: Income;
+  setIncomes: React.Dispatch<React.SetStateAction<Income[]>>;
   handleClose: () => void;
 }) {
   const { auth } = useAuth();
 
+  const initialValues = income;
+
   const validationSchema = Yup.object({
-    user_id: Yup.number().required("User ID is required"),
+    user_id: Yup.string().required("User ID is required"),
     amount: Yup.number()
       .required("Amount is required")
       .positive("Amount must be positive"),
     description: Yup.string().required("Description is required"),
-    expense_date: Yup.date().required("Expense Date is required"),
+    income_date: Yup.date().required("Income Date is required"),
   });
 
   const handleSubmit = (
-    values: typeof expense,
-    formikHelpers: FormikHelpers<typeof expense>
+    values: typeof initialValues,
+    formikHelpers: FormikHelpers<typeof initialValues>
   ) => {
     formikHelpers.setSubmitting(true);
+
+    console.log("Form Values:", values);
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", "Bearer " + auth);
 
+    const raw = JSON.stringify(values);
+
     const requestOptions = {
       method: "PUT",
       headers: myHeaders,
-      body: JSON.stringify(values),
+      body: raw,
     };
 
-    fetch(BASE_URL + "/expense/put_expense", requestOptions)
-      .then((res) => res.json())
-      .then((res) =>
-        setExpenses((prev) =>
-          prev.map((exp) =>
-            exp.expense_id === res.results.expense_id ? res.results : exp
-          )
+    fetch(BASE_URL + "/income/put_income", requestOptions)
+      .then((response) => response.text())
+      .then((result) => JSON.parse(result).results)
+      .then((result) =>
+        setIncomes((prev) =>
+          prev.map((inc) => (inc.income_id == result.income_id ? result : inc))
         )
       )
-      .catch(console.error)
-      .finally(() => {
-        formikHelpers.setSubmitting(false);
-        handleClose();
-      });
+      .catch((error) => console.error(error));
+
+    formikHelpers.setSubmitting(false);
+    formikHelpers.resetForm();
+    handleClose();
   };
 
   return (
-    <Modal show={!!expense} onHide={handleClose}>
+    <Modal show={Boolean(income)} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Edit Expense</Modal.Title>
+        <Modal.Title>Add Income</Modal.Title>
       </Modal.Header>
       <Formik
-        initialValues={expense}
+        initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
@@ -246,22 +248,22 @@ function EditExpenseModal({
 
               <Form.Group
                 className="form-floating mb-3"
-                controlId="expense_date"
+                controlId="income_date"
               >
                 <Field
-                  name="expense_date"
+                  name="income_date"
                   type="date"
-                  placeholder="Expense Date"
+                  placeholder="Income Date"
                   as={Form.Control}
-                  isInvalid={!!(errors.expense_date && touched.expense_date)}
+                  isInvalid={!!(errors.income_date && touched.income_date)}
                 />
-                <Form.Label>Expense Date</Form.Label>
+                <Form.Label>Income Date</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="expense_date" />
+                  <ErrorMessage name="income_date" />
                 </Form.Control.Feedback>
               </Form.Group>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Update Expense
+                Add Income
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -294,16 +296,16 @@ const FilterComponent = ({
   </div>
 );
 
-export default function Expense() {
+export default function Income() {
   const { auth } = useAuth();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [addShow, setAddShow] = useState(false);
-  const [editShow, setEditShow] = useState<Expense | null>(null);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [addShow, setAddShow] = useState<boolean>();
+  const [editShow, setEditShow] = useState<Income | null>(null);
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = expenses.filter((item) =>
-    [item.amount, item.description ?? "", item.expense_date]
+  const filteredItems = incomes.filter((item) =>
+    [item.amount, item.description, item.income_date]
       .join(" ")
       .toLowerCase()
       .includes(filterText.toLowerCase())
@@ -326,27 +328,44 @@ export default function Expense() {
     );
   }, [filterText, resetPaginationToggle]);
 
-  const deleteExpense = (expense: Expense) => {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    fetch(`${BASE_URL}/expense/delete_expense/${expense.expense_id}`, {
-      method: "DELETE",
-      headers: myHeaders,
+  useEffect(() => {
+    if (!auth) return;
+    fetch(`${BASE_URL}/income/get_all_incomes`, {
+      headers: { Authorization: "Bearer " + auth },
     })
       .then((res) => res.json())
-      .then((res) =>
-        setExpenses((prev) =>
-          prev.filter((exp) => exp.expense_id !== res.results.expense_id)
-        )
-      )
+      .then((res) => setIncomes(res.results))
       .catch(console.error);
-  };
+  }, [auth]);
 
-  const columns: TableColumn<Expense>[] = [
+  function deleteIncome(income: Income) {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", "Bearer " + auth);
+
+    const requestOptions = {
+      method: "DELETE",
+      headers: myHeaders,
+    };
+
+    fetch(
+      BASE_URL + "/income/delete_income/" + income.income_id,
+      requestOptions
+    )
+      .then((response) => response.json())
+      .then((response) => response.results)
+      .then((income) => {
+        setIncomes((prev) =>
+          prev.filter((inc) => inc.income_id != income.income_id)
+        );
+      })
+      .catch((error) => console.error(error));
+  }
+
+  const columns: TableColumn<Income>[] = [
     {
       name: "Options",
-      cell: (row: Expense) => (
+      cell: (row: Income) => (
         <div className="d-flex">
           <button
             className="btn btn-primary me-2"
@@ -356,7 +375,7 @@ export default function Expense() {
           </button>
           <button
             onClick={() => {
-              if (confirm("Are you sure?")) deleteExpense(row);
+              if (confirm("Are you sure?")) deleteIncome(row);
             }}
             className="btn btn-danger"
           >
@@ -364,43 +383,31 @@ export default function Expense() {
           </button>
         </div>
       ),
+      sortable: true,
     },
     {
       name: "Amount",
-      selector: (row) => row.amount,
+      selector: (row: Income) => row.amount,
       sortable: true,
     },
     {
       name: "Description",
-      selector: (row) => row.description || "-",
+      selector: (row: Income) => row.description,
+      sortable: false,
     },
     {
-      name: "Expense Date",
-      selector: (row) => new Date(row.expense_date).toISOString().split("T")[0],
+      name: "Income Date",
+      selector: (row: Income) =>
+        new Date(row.income_date).toISOString().split("T")[0],
       sortable: true,
     },
   ];
 
-  useEffect(() => {
-    if (!auth) return;
-
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Bearer " + auth);
-
-    fetch(`${BASE_URL}/expense/get_all_expenses`, {
-      method: "GET",
-      headers: myHeaders,
-    })
-      .then((res) => res.json())
-      .then((res) => setExpenses(res.results))
-      .catch(console.error);
-  }, [auth]);
-
   return auth ? (
-    expenses && expenses.length > 0 && (
-      <div className="container-fluid px-5">
+    incomes && incomes.length > 0 && (
+      <div className="container-fluid px-5" style={{ maxWidth: "100vw" }}>
         <div className="d-flex">
-          <h3 className="mb-3">Expense Table</h3>
+          <h3 className="mb-3">Income Table</h3>
           <div className="ms-3">
             <button className="btn btn-success">
               <span onClick={() => setAddShow(true)} className="fs-5 fw-bolder">
@@ -425,19 +432,23 @@ export default function Expense() {
         />
 
         {addShow && (
-          <AddExpenseModal
-            setExpenses={setExpenses}
-            show={addShow}
-            handleClose={() => setAddShow(false)}
-          />
+          <div>
+            <AddIncomeModal
+              setIncomes={setIncomes}
+              show={addShow}
+              handleClose={() => setAddShow(false)}
+            />
+          </div>
         )}
 
         {editShow && (
-          <EditExpenseModal
-            setExpenses={setExpenses}
-            expense={editShow}
-            handleClose={() => setEditShow(null)}
-          />
+          <div>
+            <EditIncomeModal
+              setIncomes={setIncomes}
+              income={editShow}
+              handleClose={() => setEditShow(null)}
+            />
+          </div>
         )}
       </div>
     )

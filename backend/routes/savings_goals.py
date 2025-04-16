@@ -129,6 +129,52 @@ def get_savings_goals(request: Request, goal_ids: str):
         return error_response(e)
 
 
+@router.get(
+    "/get_all_goals",
+    responses={
+        200: {"model": SavingsGoalsSuccessResponse},
+        404: {"model": BaseErrorResponse},
+        500: {"model": BaseErrorResponse},
+    },
+)
+def get_all_savings_goals(request: Request):
+    try:
+        if conn:
+            vuser: User = request.state.user
+            if not vuser:
+                return auth_error_response()
+
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM savings_goals WHERE user_id = %s", (vuser.user_id,)
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+
+            if not rows:
+                return not_found_response(
+                    f"No savings goals found for user ID {vuser.user_id}"
+                )
+
+            goals = [SavingsGoal(**dict(zip(column_names, row))) for row in rows]
+            return JSONResponse(
+                status_code=200,
+                content=jsonable_encoder(
+                    SavingsGoalsSuccessResponse(
+                        success=True,
+                        message="All savings goals fetched successfully",
+                        results=goals,
+                    ).model_dump()
+                ),
+            )
+    except MYSQLError as e:
+        logger.error(f"MySQL error: {e}")
+        return error_response(e)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return error_response(e)
+
+
 @router.post(
     "/post_goal",
     responses={

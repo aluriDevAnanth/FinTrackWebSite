@@ -14,45 +14,46 @@ import { Form, Button, Modal } from "react-bootstrap";
 
 const BASE_URL = process.env.BASE_URL;
 
-type Transaction = {
-  description?: string;
+type SavingsGoal = {
   user_id: number;
-  amount: number;
+  goal_id: number;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  target_date?: Date;
   created_at: Date;
-  type: string;
-  transaction_id: number;
-  transaction_date: Date;
+  updated_at: Date;
 };
 
-function AddTransactionModal({
+function AddSavingsModal({
   show,
-  setTransactions,
+  setGoals,
   handleClose,
 }: {
   show: boolean;
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  setGoals: React.Dispatch<React.SetStateAction<SavingsGoal[]>>;
   handleClose: () => void;
 }) {
   const { user, auth } = useAuth();
 
   const initialValues = {
     user_id: user?.user_id,
-    amount: "",
-    description: "",
-    type: "expense",
-    transaction_date: "",
+    name: "",
+    target_amount: "",
+    current_amount: "",
+    target_date: "",
   };
 
   const validationSchema = Yup.object({
     user_id: Yup.number().required("User ID is required"),
-    amount: Yup.number()
-      .required("Amount is required")
-      .positive("Must be positive"),
-    description: Yup.string().required("Description is required"),
-    type: Yup.string()
-      .oneOf(["income", "expense"])
-      .required("Type is required"),
-    transaction_date: Yup.date().required("Date is required"),
+    name: Yup.string().required("Name is required"),
+    target_amount: Yup.number()
+      .required("Target amount is required")
+      .positive("Must be a positive number"),
+    current_amount: Yup.number()
+      .required("Current amount is required")
+      .min(0, "Cannot be negative"),
+    target_date: Yup.date().nullable(),
   });
 
   const handleSubmit = (
@@ -61,7 +62,7 @@ function AddTransactionModal({
   ) => {
     formikHelpers.setSubmitting(true);
 
-    fetch(BASE_URL + "/transaction/post_transaction", {
+    fetch(BASE_URL + "/savings_goals/post_goal", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +71,7 @@ function AddTransactionModal({
       body: JSON.stringify(values),
     })
       .then((res) => res.json())
-      .then((res) => setTransactions((prev) => [...prev, res.results]))
+      .then((res) => setGoals((prev) => [...prev, res.results]))
       .catch(console.error)
       .finally(() => {
         formikHelpers.setSubmitting(false);
@@ -82,7 +83,7 @@ function AddTransactionModal({
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Add Transaction</Modal.Title>
+        <Modal.Title>Add Savings Goal</Modal.Title>
       </Modal.Header>
       <Formik
         initialValues={initialValues}
@@ -94,57 +95,63 @@ function AddTransactionModal({
             <Modal.Body>
               <Form.Group className="form-floating mb-3">
                 <Field
-                  name="amount"
-                  type="number"
-                  as={Form.Control}
-                  placeholder="Amount"
-                  isInvalid={!!(errors.amount && touched.amount)}
-                />
-                <Form.Label>Amount</Form.Label>
-                <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="amount" />
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="form-floating mb-3">
-                <Field
-                  name="description"
+                  name="name"
                   type="text"
                   as={Form.Control}
-                  placeholder="Description"
-                  isInvalid={!!(errors.description && touched.description)}
+                  placeholder="Goal Name"
+                  isInvalid={!!(errors.name && touched.name)}
                 />
-                <Form.Label>Description</Form.Label>
+                <Form.Label>Goal Name</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="description" />
+                  <ErrorMessage name="name" />
                 </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="form-floating mb-3">
-                <Field name="type" as="select" className="form-select">
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                </Field>
-                <Form.Label>Type</Form.Label>
+                <Field
+                  name="target_amount"
+                  type="number"
+                  as={Form.Control}
+                  placeholder="Target Amount"
+                  isInvalid={!!(errors.target_amount && touched.target_amount)}
+                />
+                <Form.Label>Target Amount</Form.Label>
+                <Form.Control.Feedback type="invalid">
+                  <ErrorMessage name="target_amount" />
+                </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="form-floating mb-3">
                 <Field
-                  name="transaction_date"
-                  type="date"
+                  name="current_amount"
+                  type="number"
                   as={Form.Control}
+                  placeholder="Current Amount"
                   isInvalid={
-                    !!(errors.transaction_date && touched.transaction_date)
+                    !!(errors.current_amount && touched.current_amount)
                   }
                 />
-                <Form.Label>Transaction Date</Form.Label>
+                <Form.Label>Current Amount</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="transaction_date" />
+                  <ErrorMessage name="current_amount" />
+                </Form.Control.Feedback>
+              </Form.Group>
+
+              <Form.Group className="form-floating mb-3">
+                <Field
+                  name="target_date"
+                  type="date"
+                  as={Form.Control}
+                  isInvalid={!!(errors.target_date && touched.target_date)}
+                />
+                <Form.Label>Target Date</Form.Label>
+                <Form.Control.Feedback type="invalid">
+                  <ErrorMessage name="target_date" />
                 </Form.Control.Feedback>
               </Form.Group>
 
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Add Transaction
+                Add Goal
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -154,36 +161,32 @@ function AddTransactionModal({
   );
 }
 
-function EditTransactionModal({
-  transaction,
-  setTransactions,
+function EditSavingsModal({
+  goal,
+  setGoals,
   handleClose,
 }: {
-  transaction: Transaction;
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  goal: SavingsGoal;
+  setGoals: React.Dispatch<React.SetStateAction<SavingsGoal[]>>;
   handleClose: () => void;
 }) {
   const { auth } = useAuth();
 
   const validationSchema = Yup.object({
     user_id: Yup.number().required("User ID is required"),
-    amount: Yup.number()
-      .required("Amount is required")
-      .positive("Must be positive"),
-    description: Yup.string().required("Description is required"),
-    type: Yup.string()
-      .oneOf(["income", "expense"])
-      .required("Type is required"),
-    transaction_date: Yup.date().required("Date is required"),
+    name: Yup.string().required("Name is required"),
+    target_amount: Yup.number().required().positive(),
+    current_amount: Yup.number().required().min(0),
+    target_date: Yup.date().nullable(),
   });
 
   const handleSubmit = (
-    values: typeof transaction,
-    formikHelpers: FormikHelpers<typeof transaction>
+    values: typeof goal,
+    formikHelpers: FormikHelpers<typeof goal>
   ) => {
     formikHelpers.setSubmitting(true);
 
-    fetch(BASE_URL + "/transaction/put_transaction", {
+    fetch(BASE_URL + "/savings_goals/put_goal", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -193,10 +196,8 @@ function EditTransactionModal({
     })
       .then((res) => res.json())
       .then((res) =>
-        setTransactions((prev) =>
-          prev.map((t) =>
-            t.transaction_id === res.results.transaction_id ? res.results : t
-          )
+        setGoals((prev) =>
+          prev.map((g) => (g.goal_id === res.results.goal_id ? res.results : g))
         )
       )
       .catch(console.error)
@@ -207,72 +208,77 @@ function EditTransactionModal({
   };
 
   return (
-    <Modal show={!!transaction} onHide={handleClose}>
+    <Modal show={!!goal} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Edit Transaction</Modal.Title>
+        <Modal.Title>Edit Savings Goal</Modal.Title>
       </Modal.Header>
       <Formik
-        initialValues={transaction}
+        initialValues={goal}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, errors, touched }) => (
           <FormikForm>
             <Modal.Body>
-              {/* Same fields as AddTransactionModal */}
               <Form.Group className="form-floating mb-3">
                 <Field
-                  name="amount"
-                  type="number"
-                  as={Form.Control}
-                  placeholder="Amount"
-                  isInvalid={!!(errors.amount && touched.amount)}
-                />
-                <Form.Label>Amount</Form.Label>
-                <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="amount" />
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="form-floating mb-3">
-                <Field
-                  name="description"
+                  name="name"
                   type="text"
                   as={Form.Control}
-                  placeholder="Description"
-                  isInvalid={!!(errors.description && touched.description)}
+                  placeholder="Goal Name"
+                  isInvalid={!!(errors.name && touched.name)}
                 />
-                <Form.Label>Description</Form.Label>
+                <Form.Label>Goal Name</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="description" />
+                  <ErrorMessage name="name" />
                 </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="form-floating mb-3">
-                <Field name="type" as="select" className="form-select">
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                </Field>
-                <Form.Label>Type</Form.Label>
+                <Field
+                  name="target_amount"
+                  type="number"
+                  as={Form.Control}
+                  placeholder="Target Amount"
+                  isInvalid={!!(errors.target_amount && touched.target_amount)}
+                />
+                <Form.Label>Target Amount</Form.Label>
+                <Form.Control.Feedback type="invalid">
+                  <ErrorMessage name="target_amount" />
+                </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="form-floating mb-3">
                 <Field
-                  name="transaction_date"
-                  type="date"
+                  name="current_amount"
+                  type="number"
                   as={Form.Control}
+                  placeholder="Current Amount"
                   isInvalid={
-                    !!(errors.transaction_date && touched.transaction_date)
+                    !!(errors.current_amount && touched.current_amount)
                   }
                 />
-                <Form.Label>Transaction Date</Form.Label>
+                <Form.Label>Current Amount</Form.Label>
                 <Form.Control.Feedback type="invalid">
-                  <ErrorMessage name="transaction_date" />
+                  <ErrorMessage name="current_amount" />
+                </Form.Control.Feedback>
+              </Form.Group>
+
+              <Form.Group className="form-floating mb-3">
+                <Field
+                  name="target_date"
+                  type="date"
+                  as={Form.Control}
+                  isInvalid={!!(errors.target_date && touched.target_date)}
+                />
+                <Form.Label>Target Date</Form.Label>
+                <Form.Control.Feedback type="invalid">
+                  <ErrorMessage name="target_date" />
                 </Form.Control.Feedback>
               </Form.Group>
 
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                Update Transaction
+                Update Goal
               </Button>
             </Modal.Body>
           </FormikForm>
@@ -305,16 +311,16 @@ const FilterComponent = ({
   </div>
 );
 
-export default function Transaction() {
+export default function SavingsGoals() {
   const { auth } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [addShow, setAddShow] = useState(false);
-  const [editShow, setEditShow] = useState<Transaction | null>(null);
+  const [editShow, setEditShow] = useState<SavingsGoal | null>(null);
   const [filterText, setFilterText] = useState("");
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
 
-  const filteredItems = transactions.filter((item) =>
-    [item.amount, item.description ?? "", item.type, item.transaction_date]
+  const filteredItems = goals.filter((item) =>
+    [item.name, item.current_amount, item.target_amount, item.target_date]
       .join(" ")
       .toLowerCase()
       .includes(filterText.toLowerCase())
@@ -337,29 +343,26 @@ export default function Transaction() {
     );
   }, [filterText, resetPaginationToggle]);
 
-  const deleteTransaction = (transaction: Transaction) => {
-    fetch(
-      `${BASE_URL}/transaction/delete_transaction/${transaction.transaction_id}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: "Bearer " + auth,
-        },
-      }
-    )
+  const deleteGoal = (goal: SavingsGoal) => {
+    fetch(`${BASE_URL}/savings_goals/delete_goal/${goal.goal_id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer " + auth,
+      },
+    })
       .then((res) => res.json())
       .then((res) =>
-        setTransactions((prev) =>
-          prev.filter((t) => t.transaction_id !== res.results.transaction_id)
+        setGoals((prev) =>
+          prev.filter((g) => g.goal_id !== res.results.goal_id)
         )
       )
       .catch(console.error);
   };
 
-  const columns: TableColumn<Transaction>[] = [
+  const columns: TableColumn<SavingsGoal>[] = [
     {
       name: "Options",
-      cell: (row: Transaction) => (
+      cell: (row) => (
         <div className="d-flex">
           <button
             className="btn btn-primary me-2"
@@ -368,8 +371,8 @@ export default function Transaction() {
             Edit
           </button>
           <button
-            onClick={() => confirm("Are you sure?") && deleteTransaction(row)}
             className="btn btn-danger"
+            onClick={() => confirm("Are you sure?") && deleteGoal(row)}
           >
             Delete
           </button>
@@ -377,43 +380,46 @@ export default function Transaction() {
       ),
     },
     {
-      name: "Amount",
-      selector: (row) => row.amount,
+      name: "Name",
+      selector: (row) => row.name,
       sortable: true,
     },
     {
-      name: "Description",
-      selector: (row) => row.description || "-",
-    },
-    {
-      name: "Type",
-      selector: (row) => row.type,
+      name: "Target Amount",
+      selector: (row) => row.target_amount,
       sortable: true,
     },
     {
-      name: "Transaction Date",
+      name: "Current Amount",
+      selector: (row) => row.current_amount,
+      sortable: true,
+    },
+    {
+      name: "Target Date",
       selector: (row) =>
-        new Date(row.transaction_date).toISOString().split("T")[0],
+        row.target_date
+          ? new Date(row.target_date).toISOString().split("T")[0]
+          : "N/A",
       sortable: true,
     },
   ];
 
   useEffect(() => {
     if (!auth) return;
-    fetch(`${BASE_URL}/transaction/get_all_transactions`, {
+    fetch(`${BASE_URL}/savings_goals/get_all_goals`, {
       headers: {
         Authorization: "Bearer " + auth,
       },
     })
       .then((res) => res.json())
-      .then((res) => setTransactions(res.results))
+      .then((res) => setGoals(res.results))
       .catch(console.error);
   }, [auth]);
 
   return auth ? (
     <div className="container-fluid px-5">
       <div className="d-flex">
-        <h3 className="mb-3">Transaction Table</h3>
+        <h3 className="mb-3">Savings Goals</h3>
         <div className="ms-3">
           <button className="btn btn-success" onClick={() => setAddShow(true)}>
             <span className="fs-5 fw-bolder">+</span>
@@ -436,16 +442,16 @@ export default function Transaction() {
       />
 
       {addShow && (
-        <AddTransactionModal
+        <AddSavingsModal
           show={addShow}
-          setTransactions={setTransactions}
+          setGoals={setGoals}
           handleClose={() => setAddShow(false)}
         />
       )}
       {editShow && (
-        <EditTransactionModal
-          transaction={editShow}
-          setTransactions={setTransactions}
+        <EditSavingsModal
+          goal={editShow}
+          setGoals={setGoals}
           handleClose={() => setEditShow(null)}
         />
       )}

@@ -1,0 +1,7 @@
+{
+  "build": {
+    "env": {
+      "ROLLUP_USE_NODE_JS": "true"
+    }
+  }
+}

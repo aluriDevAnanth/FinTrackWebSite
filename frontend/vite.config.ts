@@ -10,4 +10,7 @@ export default defineConfig({
     "process.env": process.env,
     sourceMap: true,
   },
+  preview: {
+    allowedHosts: ['fintrackfrontend.onrender.com'],
+  },
 })

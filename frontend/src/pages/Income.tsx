@@ -343,9 +343,10 @@ export default function Income() {
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", "Bearer " + auth);
 
-    const requestOptions = {
+    const requestOptions: RequestInit = {
       method: "DELETE",
       headers: myHeaders,
+      mode: "cors",
     };
 
     fetch(

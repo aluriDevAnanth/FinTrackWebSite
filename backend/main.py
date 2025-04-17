@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from utils.logger import logger
 from dotenv import load_dotenv
@@ -21,15 +21,16 @@ FRONTEND_URL= os_getenv("FRONTEND_URL")
 
 print(FRONTEND_URL)
 
+app.add_middleware(JWTAuthMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://fin-track-web-site.vercel.app","*"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.add_middleware(JWTAuthMiddleware)
 
 app.include_router(auth_router)
 app.include_router(user_router)
@@ -45,5 +46,5 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/cors_check")
-def cors_check():
-    return {"origin": os_getenv("FRONTEND_URL")}
+def cors_check(res: Response): 
+    return {"origin": res} 

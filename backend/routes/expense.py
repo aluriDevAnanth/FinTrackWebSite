@@ -58,10 +58,7 @@ def get_expense(expense_id: int, request: Request):
                 (expense_id, vuser.user_id),
             )
             row = cursor.fetchone()
-            cursor.close()
-
-            if not row:
-                return not_found_response(f"Expense ID {expense_id} not found")
+            cursor.close() 
 
             return JSONResponse(
                 status_code=200,
@@ -104,10 +101,7 @@ def get_expenses(request: Request, expense_ids: str = Query(...)):
                 tuple(expense_ids) + (vuser.user_id,),
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(f"No expenses found for IDs {expense_ids}")
+            cursor.close() 
 
             expenses = [Expense(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -146,12 +140,7 @@ def get_all_expenses(request: Request):
                 "SELECT * FROM expenses WHERE user_id = %s", (vuser.user_id,)
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No expenses found for user ID {vuser.user_id}"
-                )
+            cursor.close() 
 
             expenses = [Expense(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -254,13 +243,7 @@ def update_expense(update_data: UpdateExpense, request: Request):
             cursor.execute(
                 f"UPDATE expenses SET {set_clause} WHERE expense_id = %s", values
             )
-            conn.commit()
-
-            if cursor.rowcount == 0:
-                cursor.close()
-                return not_found_response(
-                    f"Expense ID {expense_id} not found or not updated"
-                )
+            conn.commit() 
 
             cursor.execute(
                 "SELECT * FROM expenses WHERE expense_id = %s", (expense_id,)
@@ -305,11 +288,7 @@ def delete_expense(expense_id: int, request: Request):
             cursor.execute(
                 "SELECT * FROM expenses WHERE expense_id = %s", (expense_id,)
             )
-            row = cursor.fetchone()
-
-            if not row:
-                cursor.close()
-                return not_found_response(f"Expense ID {expense_id} not found")
+            row = cursor.fetchone() 
 
             expense = Expense(**dict(zip(column_names, row)))
             cursor.execute("DELETE FROM expenses WHERE expense_id = %s", (expense_id,))
@@ -357,13 +336,4 @@ def validation_error_response(msg: str):
         content=BaseErrorResponse(
             success=False, errorType="ValidationError", error=msg
         ).model_dump(),
-    )
-
-
-def not_found_response(msg: str):
-    return JSONResponse(
-        status_code=404,
-        content=BaseErrorResponse(
-            success=False, errorType="NotFoundError", error=msg
-        ).model_dump(),
-    )
+    ) 

@@ -59,10 +59,7 @@ def get_savings_goal(goal_id: int, request: Request):
                 (goal_id, vuser.user_id),
             )
             row = cursor.fetchone()
-            cursor.close()
-
-            if not row:
-                return not_found_response(f"Savings goal ID {goal_id} not found")
+            cursor.close() 
 
             return JSONResponse(
                 status_code=200,
@@ -106,9 +103,7 @@ def get_savings_goals(request: Request, goal_ids: str):
             )
             rows = cursor.fetchall()
             cursor.close()
-
-            if not rows:
-                return not_found_response(f"No savings goals found for IDs {goal_ids}")
+ 
 
             goals = [SavingsGoal(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -149,12 +144,7 @@ def get_all_savings_goals(request: Request):
                 "SELECT * FROM savings_goals WHERE user_id = %s", (vuser.user_id,)
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No savings goals found for user ID {vuser.user_id}"
-                )
+            cursor.close() 
 
             goals = [SavingsGoal(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -262,13 +252,7 @@ def update_savings_goal(update_data: UpdateSavingsGoal, request: Request):
                 f"UPDATE savings_goals SET {set_clause} WHERE goal_id = %s",
                 values,
             )
-            conn.commit()
-
-            if cursor.rowcount == 0:
-                cursor.close()
-                return not_found_response(
-                    f"Savings goal ID {goal_id} not found or not updated"
-                )
+            conn.commit() 
 
             cursor.execute("SELECT * FROM savings_goals WHERE goal_id = %s", (goal_id,))
             row = cursor.fetchone()
@@ -310,10 +294,7 @@ def delete_savings_goal(goal_id: int, request: Request):
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM savings_goals WHERE goal_id = %s", (goal_id,))
             row = cursor.fetchone()
-
-            if not row:
-                cursor.close()
-                return not_found_response(f"Savings goal ID {goal_id} not found")
+ 
 
             goal = SavingsGoal(**dict(zip(column_names, row)))
             cursor.execute("DELETE FROM savings_goals WHERE goal_id = %s", (goal_id,))
@@ -362,13 +343,4 @@ def validation_error_response(msg: str):
         content=BaseErrorResponse(
             success=False, errorType="ValidationError", error=msg
         ).model_dump(),
-    )
-
-
-def not_found_response(msg: str):
-    return JSONResponse(
-        status_code=404,
-        content=BaseErrorResponse(
-            success=False, errorType="NotFoundError", error=msg
-        ).model_dump(),
-    )
+    ) 

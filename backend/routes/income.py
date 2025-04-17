@@ -65,17 +65,7 @@ def get_income(income_id: int, request: Request):
                 (income_id, vuser.user_id),
             )
             row = cursor.fetchone()
-            cursor.close()
-
-            if not row:
-                return JSONResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    content=BaseErrorResponse(
-                        success=False,
-                        errorType="NotFoundError",
-                        error=f"Income ID {income_id} not found",
-                    ).model_dump(),
-                )
+            cursor.close() 
 
             income = Income(**dict(zip(column_names, row)))
             return JSONResponse(
@@ -130,17 +120,7 @@ def get_incomes(request: Request, income_ids: str = Query(...)):
                 tuple(income_ids),
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return JSONResponse(
-                    status_code=404,
-                    content=BaseErrorResponse(
-                        success=False,
-                        errorType="NotFoundError",
-                        error=f"No incomes found for IDs {income_ids}",
-                    ).model_dump(),
-                )
+            cursor.close() 
 
             incomes = [Income(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -190,17 +170,7 @@ def get_all_incomes(request: Request):
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM income WHERE user_id = %s", (vuser.user_id,))
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return JSONResponse(
-                    status_code=404,
-                    content=BaseErrorResponse(
-                        success=False,
-                        errorType="NotFoundError",
-                        error="No incomes found for the user.",
-                    ).model_dump(),
-                )
+            cursor.close() 
 
             incomes = [Income(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -339,18 +309,7 @@ def update_income(update_data: UpdateIncome, request: Request):
             cursor.execute(
                 f"UPDATE income SET {set_clause} WHERE income_id = %s", values
             )
-            conn.commit()
-
-            if cursor.rowcount == 0:
-                cursor.close()
-                return JSONResponse(
-                    status_code=404,
-                    content=BaseErrorResponse(
-                        success=False,
-                        errorType="NotFoundError",
-                        error=f"Income with ID {income_id} not found or nothing to updated.",
-                    ).model_dump(),
-                )
+            conn.commit() 
 
             cursor.execute("SELECT * FROM income WHERE income_id = %s", (income_id,))
             row = cursor.fetchone()
@@ -403,18 +362,7 @@ def delete_income(income_id: int, request: Request):
 
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM income WHERE income_id = %s", (income_id,))
-            row = cursor.fetchone()
-
-            if not row:
-                cursor.close()
-                return JSONResponse(
-                    status_code=404,
-                    content=BaseErrorResponse(
-                        success=False,
-                        errorType="NotFoundError",
-                        error=f"Income with ID {income_id} not found",
-                    ).model_dump(),
-                )
+            row = cursor.fetchone() 
 
             income = Income(**dict(zip(column_names, row)))
 

@@ -57,10 +57,7 @@ def get_budget(budget_id: int, request: Request):
                 (budget_id, vuser.user_id),
             )
             row = cursor.fetchone()
-            cursor.close()
-
-            if not row:
-                return not_found_response(f"Budget ID {budget_id} not found")
+            cursor.close() 
 
             return JSONResponse(
                 status_code=200,
@@ -103,10 +100,7 @@ def get_budgets(request: Request, budget_ids: str):
                 tuple(budget_ids) + (vuser.user_id,),
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(f"No budgets found for IDs {budget_ids}")
+            cursor.close() 
 
             budgets = [Budget(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -148,12 +142,7 @@ def get_user_budgets(request: Request):
                 (vuser.user_id,),
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No budgets found for user ID {vuser.user_id}"
-                )
+            cursor.close() 
 
             budgets = [Budget(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -260,13 +249,7 @@ def update_budget(update_data: UpdateBudget, request: Request):
                 f"UPDATE budgets SET {set_clause} WHERE budget_id = %s",
                 values,
             )
-            conn.commit()
-
-            if cursor.rowcount == 0:
-                cursor.close()
-                return not_found_response(
-                    f"Budget ID {budget_id} not found or not updated"
-                )
+            conn.commit() 
 
             cursor.execute(
                 "SELECT * FROM budgets WHERE budget_id = %s",
@@ -313,11 +296,7 @@ def delete_budget(budget_id: int, request: Request):
                 "SELECT * FROM budgets WHERE budget_id = %s",
                 (budget_id,),
             )
-            row = cursor.fetchone()
-
-            if not row:
-                cursor.close()
-                return not_found_response(f"Budget ID {budget_id} not found")
+            row = cursor.fetchone() 
 
             budget = Budget(**dict(zip(column_names, row)))
             cursor.execute("DELETE FROM budgets WHERE budget_id = %s", (budget_id,))
@@ -367,13 +346,4 @@ def validation_error_response(msg: str):
         content=BaseErrorResponse(
             success=False, errorType="ValidationError", error=msg
         ).model_dump(),
-    )
-
-
-def not_found_response(msg: str):
-    return JSONResponse(
-        status_code=404,
-        content=BaseErrorResponse(
-            success=False, errorType="NotFoundError", error=msg
-        ).model_dump(),
-    )
+    ) 

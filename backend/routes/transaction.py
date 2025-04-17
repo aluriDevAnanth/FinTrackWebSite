@@ -59,9 +59,7 @@ def get_transaction(transaction_id: int, request: Request):
             )
             row = cursor.fetchone()
             cursor.close()
-
-            if not row:
-                return not_found_response(f"Transaction ID {transaction_id} not found")
+ 
 
             return JSONResponse(
                 status_code=200,
@@ -105,11 +103,7 @@ def get_transactions(request: Request, transaction_ids: str = Query(...)):
             )
             rows = cursor.fetchall()
             cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No transactions found for IDs {transaction_ids}"
-                )
+ 
 
             transactions = [Transaction(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -150,12 +144,7 @@ def get_all_transactions(request: Request):
                 "SELECT * FROM transactions WHERE user_id = %s", (vuser.user_id,)
             )
             rows = cursor.fetchall()
-            cursor.close()
-
-            if not rows:
-                return not_found_response(
-                    f"No transactions found for user ID {vuser.user_id}"
-                )
+            cursor.close() 
 
             transactions = [Transaction(**dict(zip(column_names, row))) for row in rows]
             return JSONResponse(
@@ -263,13 +252,7 @@ def update_transaction(update_data: UpdateTransaction, request: Request):
                 f"UPDATE transactions SET {set_clause} WHERE transaction_id = %s",
                 values,
             )
-            conn.commit()
-
-            if cursor.rowcount == 0:
-                cursor.close()
-                return not_found_response(
-                    f"Transaction ID {transaction_id} not found or not updated"
-                )
+            conn.commit() 
 
             cursor.execute(
                 "SELECT * FROM transactions WHERE transaction_id = %s",
@@ -317,11 +300,7 @@ def delete_transaction(transaction_id: int, request: Request):
                 (transaction_id,),
             )
             row = cursor.fetchone()
-
-            if not row:
-                cursor.close()
-                return not_found_response(f"Transaction ID {transaction_id} not found")
-
+ 
             transaction = Transaction(**dict(zip(column_names, row)))
             cursor.execute(
                 "DELETE FROM transactions WHERE transaction_id = %s", (transaction_id,)
@@ -372,13 +351,4 @@ def validation_error_response(msg: str):
         content=BaseErrorResponse(
             success=False, errorType="ValidationError", error=msg
         ).model_dump(),
-    )
-
-
-def not_found_response(msg: str):
-    return JSONResponse(
-        status_code=404,
-        content=BaseErrorResponse(
-            success=False, errorType="NotFoundError", error=msg
-        ).model_dump(),
-    )
+    ) 

@@ -1,0 +1,30 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx --env-file=.env --watch ./src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@trpc/server": "^11.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
+    "ulid": "^3.0.0",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}
